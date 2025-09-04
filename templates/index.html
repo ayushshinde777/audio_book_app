@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Audio Book Maker</title>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --error:#ef4444; }
+    *{box-sizing:border-box}
+    body {
+        margin:0;
+        font-family: "Segoe UI", Roboto, Ubuntu, sans-serif;
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background:linear-gradient(120deg,#0a0f1f,#111827);
+        color:var(--text);
+    }
+    .container{max-width:900px; margin:40px auto; padding:20px;}
+    .card{background:rgba(17,24,39,.85); backdrop-filter:blur(6px); border:1px solid #1f2937; border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,.35);}
+    h1{margin:0 0 10px; font-weight:600; letter-spacing:.5px}
+    p.sub{margin:0 0 24px; color:var(--muted)}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px;}
+    @media(min-width:900px){ .grid{grid-template-columns:1.2fr .8fr;} }
+    textarea{width:100%; min-height:220px; resize:vertical; border-radius:12px; padding:12px; border:1px solid #374151; background:#0b1220; color:var(--text);}
+    .field{display:flex; flex-direction:column; gap:6px}
+    .row{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+    label{color:#cbd5e1}
+    input[type="text"], select {width:100%; padding:10px 12px; border-radius:10px; border:1px solid #374151; background:#0b1220; color:var(--text);}
+    input[type="file"]{border:1px dashed #334155; padding:12px; border-radius:10px; background:#0b1220; color:#cbd5e1}
+    .muted{color:#94a3b8}
+    .actions{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px}
+    .btn{appearance:none; border:none; padding:12px 16px; border-radius:12px; background:var(--accent); color:#052e16; font-weight:600; cursor:pointer; transition:.2s transform ease, .2s opacity ease}
+    .btn:hover{transform:translateY(-1px)}
+    .note{color:#9ca3af}
+    .alert{padding:12px 14px; background:#1f2937; border-left:4px solid var(--error); border-radius:8px; color:#fecaca; margin-bottom:12px}
+    .switch{display:flex; align-items:center; gap:8px}
+</style>
+
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Audio Book Maker</h1>
+      
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/synthesize" enctype="multipart/form-data">
+        <div class="grid">
+          <div class="left">
+            <div class="field">
+              <label for="text">Text (paste here)</label>
+              <textarea id="text" name="text" placeholder="Paste or type your story here..."></textarea>
+              <span class="muted">If you upload a file, it will override this text.</span>
+            </div>
+
+            <div class="field">
+              <label for="text_file">Or upload a .txt file</label>
+              <input id="text_file" type="file" name="text_file" accept=".txt" />
+            </div>
+          </div>
+
+          <div class="right">
+            <div class="row">
+              <div class="field">
+                <label for="tts_lang">TTS Language (voice)</label>
+                <select id="tts_lang" name="tts_lang">
+                  <option value="en">English (en)</option>
+                  <option value="hi">Hindi (hi)</option>
+                  <option value="mr">Marathi (mr)</option>
+                  <option value="ta">Tamil (ta)</option>
+                  <option value="te">Telugu (te)</option>
+                  <option value="bn">Bengali (bn)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="tld">Accent (tld)</label>
+                <select id="tld" name="tld">
+                  <option value="co.in">India (co.in)</option>
+                  <option value="com">US (com)</option>
+                  <option value="co.uk">UK (co.uk)</option>
+                  <option value="com.au">Australia (com.au)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="file_basename">Output file base name</label>
+                <input id="file_basename" type="text" name="file_basename" placeholder="audiobook" />
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <label class="switch">
+                  <input type="checkbox" name="slow" />
+                  <span>Slow speech</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field" style="margin-top:8px;">
+              <label class="switch">
+                <input type="checkbox" id="do_translate" name="do_translate" />
+                <span>Translate before speech</span>
+              </label>
+              <div class="row" id="translate_options" style="margin-top:8px; display:none;">
+                <input type="hidden" name="source_lang" value="auto" />
+                <div class="field">
+                  <label for="target_lang">Target language</label>
+                  <select id="target_lang" name="target_lang">
+                    <option value="en">English (en)</option>
+                    <option value="hi">Hindi (hi)</option>
+                    <option value="mr">Marathi (mr)</option>
+                    <option value="ta">Tamil (ta)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="note">Note</label>
+                  <div class="note">Source language will be auto-detected.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn" type="submit">Generate MP3</button>
+              <span class="note">Your browser will download the generated file.</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <p class="note" style="margin-top:16px;">
+        Tip: For long books, split into chapters and generate multiple MP3s.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const chk = document.getElementById("do_translate");
+    const panel = document.getElementById("translate_options");
+    const ttsLang = document.getElementById("tts_lang");
+    const targetLang = document.getElementById("target_lang");
+    function syncPanel(){
+      panel.style.display = chk.checked ? "grid" : "none";
+      if(!chk.checked){
+        targetLang.value = ttsLang.value;
+      }
+    }
+    chk.addEventListener("change", syncPanel);
+    ttsLang.addEventListener("change", () => { if(!chk.checked){ targetLang.value = ttsLang.value; } });
+    syncPanel();
+  </script>
+</body>
+</html>
